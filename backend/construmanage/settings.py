@@ -5,11 +5,33 @@ Reads sensitive configuration from environment variables for modularity.
 import os
 from pathlib import Path
 from datetime import timedelta
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def load_env_file(path):
+    if not path.exists():
+        return
+    for raw_line in path.read_text(encoding='utf-8').splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_env_file(BASE_DIR / '.env')
+
+
+def required_env(name):
+    value = os.environ.get(name)
+    if not value:
+        raise ImproperlyConfigured(f'Missing required environment variable: {name}')
+    return value
+
 # ─── Security ───
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-fallback-key')
+SECRET_KEY = required_env('DJANGO_SECRET_KEY')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
@@ -66,7 +88,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('POSTGRES_DB', 'construmanage_db'),
         'USER': os.environ.get('POSTGRES_USER', 'construmanage_user'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'construmanage_secret_2026'),
+        'PASSWORD': required_env('POSTGRES_PASSWORD'),
         'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
         'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }

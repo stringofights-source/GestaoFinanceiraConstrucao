@@ -2,16 +2,42 @@
 Management command to populate the database with realistic demo data.
 Usage: python manage.py seed_data
 """
+import os
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from api.models import Obra, Transacao, Fornecedor, PrevisaoFinanceira
 from datetime import date, timedelta
 from decimal import Decimal
-import random
 
 
 class Command(BaseCommand):
     help = 'Popula a base de dados com dados de demonstração realistas.'
+
+    def create_seed_users(self):
+        admin_username = os.environ.get('SEED_ADMIN_USERNAME', 'admin')
+        admin_email = os.environ.get('SEED_ADMIN_EMAIL', 'admin@construmanage.pt')
+        admin_password = os.environ.get('SEED_ADMIN_PASSWORD')
+
+        demo_username = os.environ.get('SEED_USER_USERNAME', 'davide')
+        demo_email = os.environ.get('SEED_USER_EMAIL', 'davide@construmanage.pt')
+        demo_password = os.environ.get('SEED_USER_PASSWORD')
+        demo_first_name = os.environ.get('SEED_USER_FIRST_NAME', 'Davide')
+        demo_last_name = os.environ.get('SEED_USER_LAST_NAME', 'Moreno')
+
+        if admin_password and not User.objects.filter(username=admin_username).exists():
+            User.objects.create_superuser(admin_username, admin_email, admin_password)
+            self.stdout.write(self.style.SUCCESS(f'[+] Superuser "{admin_username}" criado.'))
+        elif not admin_password:
+            self.stdout.write(self.style.WARNING('[!] SEED_ADMIN_PASSWORD nao definido; superuser demo nao foi criado.'))
+
+        if demo_password and not User.objects.filter(username=demo_username).exists():
+            User.objects.create_user(
+                demo_username, demo_email, demo_password,
+                first_name=demo_first_name, last_name=demo_last_name
+            )
+            self.stdout.write(self.style.SUCCESS(f'[+] User "{demo_username}" criado.'))
+        elif not demo_password:
+            self.stdout.write(self.style.WARNING('[!] SEED_USER_PASSWORD nao definido; user demo nao foi criado.'))
 
     def handle(self, *args, **options):
         self.stdout.write('[*] A limpar dados antigos...')
@@ -20,18 +46,7 @@ class Command(BaseCommand):
         PrevisaoFinanceira.objects.all().delete()
         Obra.objects.all().delete()
 
-        # Create admin superuser if not exists
-        if not User.objects.filter(username='admin').exists():
-            User.objects.create_superuser('admin', 'admin@construmanage.pt', 'admin123')
-            self.stdout.write(self.style.SUCCESS('[+] Superuser "admin" criado (password: admin123)'))
-
-        # Create demo user
-        if not User.objects.filter(username='davide').exists():
-            User.objects.create_user(
-                'davide', 'davide@construmanage.pt', 'davide1234',
-                first_name='Davide', last_name='Moreno'
-            )
-            self.stdout.write(self.style.SUCCESS('[+] User "davide" criado (password: davide1234)'))
+        self.create_seed_users()
 
         # ─── OBRAS ───
         self.stdout.write('[*] A criar obras...')

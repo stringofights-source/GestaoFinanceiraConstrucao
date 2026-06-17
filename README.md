@@ -115,8 +115,9 @@ GestaoFinanceiraConstrucao/
 cd GestaoFinanceiraConstrucao
 
 # 2. Copiar e configurar variáveis de ambiente
-cp .env.example .env
-# Editar .env com os valores desejados (ou manter os defaults)
+cp backend/.env.example backend/.env
+cp backend/.env.example backend/.env.docker
+# Editar backend/.env e backend/.env.docker com valores seguros antes de iniciar
 
 # 3. Construir e iniciar todos os serviços
 docker compose up --build -d
@@ -188,14 +189,22 @@ Todas as configurações sensíveis são geridas via ficheiro `.env` na raiz do 
 
 | Variável | Descrição | Default |
 |----------|-----------|---------|
-| `DJANGO_SECRET_KEY` | Chave secreta do Django | *dev fallback* |
+| `DJANGO_SECRET_KEY` | Chave secreta do Django | Obrigatorio |
 | `DJANGO_DEBUG` | Modo debug (True/False) | `True` |
 | `DJANGO_ALLOWED_HOSTS` | Hosts permitidos (separados por vírgula) | `localhost,127.0.0.1` |
 | `POSTGRES_DB` | Nome da base de dados | `construmanage_db` |
 | `POSTGRES_USER` | Utilizador PostgreSQL | `construmanage_user` |
-| `POSTGRES_PASSWORD` | Password PostgreSQL | — |
+| `POSTGRES_PASSWORD` | Password PostgreSQL | Obrigatorio |
 | `POSTGRES_HOST` | Host da DB (`db` em Docker) | `db` |
 | `POSTGRES_PORT` | Porta da DB | `5432` |
+| `SEED_ADMIN_USERNAME` | Utilizador admin criado pelo seed | `admin` |
+| `SEED_ADMIN_EMAIL` | E-mail do admin criado pelo seed | `admin@construmanage.pt` |
+| `SEED_ADMIN_PASSWORD` | Password do admin criado pelo seed | Obrigatorio para criar admin |
+| `SEED_USER_USERNAME` | Utilizador demo criado pelo seed | `davide` |
+| `SEED_USER_EMAIL` | E-mail do utilizador demo | `davide@construmanage.pt` |
+| `SEED_USER_PASSWORD` | Password do utilizador demo | Obrigatorio para criar utilizador |
+| `SEED_USER_FIRST_NAME` | Primeiro nome do utilizador demo | `Davide` |
+| `SEED_USER_LAST_NAME` | Apelido do utilizador demo | `Moreno` |
 | `JWT_ACCESS_TOKEN_LIFETIME_HOURS` | Duração do access token (horas) | `1` |
 | `JWT_REFRESH_TOKEN_LIFETIME_DAYS` | Duração do refresh token (dias) | `7` |
 | `CORS_ALLOWED_ORIGINS` | Origens CORS permitidas | — |
@@ -206,10 +215,13 @@ Todas as configurações sensíveis são geridas via ficheiro `.env` na raiz do 
 
 O seed automático cria os seguintes utilizadores:
 
-| Utilizador | Password | Tipo |
-|------------|----------|------|
-| `admin` | `admin123` | Superuser (Django Admin) |
-| `joao` | `joao1234` | Utilizador normal |
+| Variavel de utilizador | Variavel de password | Tipo |
+|------------------------|----------------------|------|
+| `SEED_ADMIN_USERNAME` | `SEED_ADMIN_PASSWORD` | Superuser (Django Admin) |
+| `SEED_USER_USERNAME` | `SEED_USER_PASSWORD` | Utilizador normal |
+
+As passwords nao estao hardcoded no codigo; devem ser configuradas no `.env` antes de executar `seed_data.py`.
+Se `SEED_ADMIN_PASSWORD` ou `SEED_USER_PASSWORD` nao estiverem definidas, o respetivo utilizador demo nao e criado.
 
 ---
 
