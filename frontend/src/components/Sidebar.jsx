@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom'
 export default function Sidebar() {
   const links = [
     { to: '/', icon: 'fas fa-chart-line', label: 'Relatórios em Tempo Real' },
-    { to: '/orcamentos', icon: 'fas fa-file-invoice-dollar', label: 'Controle Orçamental' },
+    { to: '/obras', icon: 'fas fa-building', label: 'Gestão de Obras' },
     { to: '/fluxo-caixa', icon: 'fas fa-money-bill-transfer', label: 'Fluxo de Caixa' },
     { to: '/fornecedores', icon: 'fas fa-truck-field', label: 'Fornecedores & Pagamentos' },
     { to: '/previsoes', icon: 'fas fa-chart-pie', label: 'Previsões Financeiras' },

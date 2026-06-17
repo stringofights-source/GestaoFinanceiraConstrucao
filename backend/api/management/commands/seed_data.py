@@ -26,12 +26,12 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('[+] Superuser "admin" criado (password: admin123)'))
 
         # Create demo user
-        if not User.objects.filter(username='joao').exists():
+        if not User.objects.filter(username='davide').exists():
             User.objects.create_user(
-                'joao', 'joao@construmanage.pt', 'joao1234',
-                first_name='João Paulo', last_name='Pereira'
+                'davide', 'davide@construmanage.pt', 'davide1234',
+                first_name='Davide', last_name='Moreno'
             )
-            self.stdout.write(self.style.SUCCESS('[+] User "joao" criado (password: joao1234)'))
+            self.stdout.write(self.style.SUCCESS('[+] User "davide" criado (password: davide1234)'))
 
         # ─── OBRAS ───
         self.stdout.write('[*] A criar obras...')
