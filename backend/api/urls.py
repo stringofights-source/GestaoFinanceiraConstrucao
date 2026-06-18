@@ -11,6 +11,7 @@ router.register(r'obras', views.ObraViewSet)
 router.register(r'transacoes', views.TransacaoViewSet)
 router.register(r'fornecedores', views.FornecedorViewSet)
 router.register(r'previsoes', views.PrevisaoFinanceiraViewSet)
+router.register(r'notificacoes', views.NotificacaoViewSet, basename='notificacoes')
 
 urlpatterns = [
     # JWT Authentication

@@ -95,11 +95,12 @@ GestaoFinanceiraConstrucao/
         â”œâ”€â”€ components/
         â”‚   â”œâ”€â”€ Sidebar.jsx
         â”‚   â””â”€â”€ TopHeader.jsx
+        │   └── PageFilters.jsx
         â””â”€â”€ pages/
             â”œâ”€â”€ Login.jsx
             â”œâ”€â”€ Register.jsx
             â”œâ”€â”€ Dashboard.jsx
-            â”œâ”€â”€ Orcamentos.jsx
+            â”œâ”€â”€ Obras.jsx
             â”œâ”€â”€ FluxoCaixa.jsx
             â”œâ”€â”€ Fornecedores.jsx
             â””â”€â”€ Previsoes.jsx
@@ -242,6 +243,7 @@ Base URL: `http://localhost:8000/api/` (direto) ou `http://localhost/api/` (via 
 | CRUD | `/api/transacoes/` | TransaÃ§Ãµes (fluxo de caixa) | âœ… |
 | CRUD | `/api/fornecedores/` | Fornecedores | âœ… |
 | CRUD | `/api/previsoes/` | PrevisÃµes financeiras | âœ… |
+| GET/PATCH/DELETE | `/api/notificacoes/` | Notificacoes e historico | sim |
 
 ---
 

@@ -2,7 +2,9 @@ __pycache__
 *.pyc
 *.pyo
 venv/
+.codex_site/
 .env
+.env.docker
 db.sqlite3
 *.log
 .git

@@ -1,4 +1,4 @@
-# ─── Git Ignore ───
+# Git ignore
 .env
 .env.docker
 __pycache__/
@@ -8,5 +8,6 @@ db.sqlite3
 venv/
 node_modules/
 dist/
+.codex_site/
 .DS_Store
 *.log

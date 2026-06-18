@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Obra, Transacao, Fornecedor, PrevisaoFinanceira
+from .models import Obra, Transacao, Fornecedor, PrevisaoFinanceira, Notificacao
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -45,3 +45,10 @@ class PrevisaoFinanceiraSerializer(serializers.ModelSerializer):
     class Meta:
         model = PrevisaoFinanceira
         fields = '__all__'
+
+
+class NotificacaoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notificacao
+        fields = '__all__'
+        read_only_fields = ['tipo', 'titulo', 'mensagem', 'origem_tipo', 'origem_id', 'criado_em', 'atualizado_em', 'lida_em']

@@ -7,7 +7,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ─── Interceptor: attach JWT token to every request ───
+// Attach JWT token to every request.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) {
@@ -16,12 +16,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ─── Interceptor: auto-refresh token on 401 ───
+// Refresh token on 401.
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
@@ -48,33 +48,39 @@ api.interceptors.response.use(
   }
 );
 
-// ─── Auth ───
+// Auth
 export const login = (username, password) =>
   api.post('/auth/login/', { username, password });
 
 export const register = (data) => api.post('/auth/register/', data);
 
-// ─── Dashboard ───
+// Dashboard
 export const getDashboard = () => api.get('/dashboard/');
 
-// ─── Obras ───
+// Obras
 export const getObras = () => api.get('/obras/');
 export const createObra = (data) => api.post('/obras/', data);
 export const updateObra = (id, data) => api.put(`/obras/${id}/`, data);
 export const deleteObra = (id) => api.delete(`/obras/${id}/`);
 
-// ─── Transações ───
+// Transacoes
 export const getTransacoes = () => api.get('/transacoes/');
 export const createTransacao = (data) => api.post('/transacoes/', data);
+export const updateTransacao = (id, data) => api.put(`/transacoes/${id}/`, data);
 export const deleteTransacao = (id) => api.delete(`/transacoes/${id}/`);
 
-// ─── Fornecedores ───
+// Fornecedores
 export const getFornecedores = () => api.get('/fornecedores/');
 export const createFornecedor = (data) => api.post('/fornecedores/', data);
 export const updateFornecedor = (id, data) => api.put(`/fornecedores/${id}/`, data);
 export const deleteFornecedor = (id) => api.delete(`/fornecedores/${id}/`);
 
-// ─── Previsões ───
+// Previsoes
 export const getPrevisoes = () => api.get('/previsoes/');
+
+// Notificacoes
+export const getNotificacoes = () => api.get('/notificacoes/');
+export const marcarNotificacaoLida = (id) => api.post(`/notificacoes/${id}/marcar_lida/`);
+export const marcarTodasNotificacoesLidas = () => api.post('/notificacoes/marcar_todas_lidas/');
 
 export default api;

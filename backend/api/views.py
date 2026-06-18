@@ -1,16 +1,17 @@
 from rest_framework import viewsets, status, permissions
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from django.db.models import Sum, Q
+from django.db.models import F, Sum
 from django.utils import timezone
 from datetime import timedelta
 
-from .models import Obra, Transacao, Fornecedor, PrevisaoFinanceira
+from .models import Obra, Transacao, Fornecedor, PrevisaoFinanceira, Notificacao
 from .serializers import (
     ObraSerializer,
     TransacaoSerializer,
     FornecedorSerializer,
     PrevisaoFinanceiraSerializer,
+    NotificacaoSerializer,
     UserSerializer,
 )
 
@@ -114,3 +115,80 @@ class FornecedorViewSet(viewsets.ModelViewSet):
 class PrevisaoFinanceiraViewSet(viewsets.ModelViewSet):
     queryset = PrevisaoFinanceira.objects.all()
     serializer_class = PrevisaoFinanceiraSerializer
+
+
+def sincronizar_notificacoes():
+    hoje = timezone.now().date()
+    limite_pendentes = hoje + timedelta(days=7)
+
+    fornecedores_abertos = Fornecedor.objects.exclude(status_pagamento='pago')
+    for fornecedor in fornecedores_abertos.filter(prazo_pagamento__lt=hoje):
+        Notificacao.objects.update_or_create(
+            tipo='pagamento_vencido',
+            origem_tipo='fornecedor',
+            origem_id=fornecedor.id,
+            defaults={
+                'titulo': f'Pagamento vencido: {fornecedor.nome}',
+                'mensagem': (
+                    f'O pagamento de {fornecedor.valor} EUR a {fornecedor.nome} '
+                    f'venceu em {fornecedor.prazo_pagamento}.'
+                ),
+            },
+        )
+
+    for fornecedor in fornecedores_abertos.filter(prazo_pagamento__gte=hoje, prazo_pagamento__lte=limite_pendentes):
+        Notificacao.objects.update_or_create(
+            tipo='pagamento_pendente',
+            origem_tipo='fornecedor',
+            origem_id=fornecedor.id,
+            defaults={
+                'titulo': f'Pagamento pendente: {fornecedor.nome}',
+                'mensagem': (
+                    f'O pagamento de {fornecedor.valor} EUR a {fornecedor.nome} '
+                    f'esta previsto para {fornecedor.prazo_pagamento}.'
+                ),
+            },
+        )
+
+    for obra in Obra.objects.filter(custo_atual__gt=F('orcamento_aprovado')):
+        Notificacao.objects.update_or_create(
+            tipo='desvio_orcamento',
+            origem_tipo='obra',
+            origem_id=obra.id,
+            defaults={
+                'titulo': f'Desvio de orcamento: {obra.nome}',
+                'mensagem': (
+                    f'A obra {obra.nome} tem custo atual de {obra.custo_atual} EUR, '
+                    f'acima do orcamento aprovado de {obra.orcamento_aprovado} EUR.'
+                ),
+            },
+        )
+
+
+class NotificacaoViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificacaoSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
+    def get_queryset(self):
+        sincronizar_notificacoes()
+        return Notificacao.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {'detail': 'Notificacoes sao geradas automaticamente.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    @action(detail=True, methods=['post'])
+    def marcar_lida(self, request, pk=None):
+        notificacao = self.get_object()
+        notificacao.lida = True
+        notificacao.lida_em = timezone.now()
+        notificacao.save(update_fields=['lida', 'lida_em', 'atualizado_em'])
+        return Response(self.get_serializer(notificacao).data)
+
+    @action(detail=False, methods=['post'])
+    def marcar_todas_lidas(self, request):
+        sincronizar_notificacoes()
+        Notificacao.objects.filter(lida=False).update(lida=True, lida_em=timezone.now())
+        return Response({'message': 'Notificacoes marcadas como lidas.'})

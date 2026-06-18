@@ -1,10 +1,8 @@
-# ═══════════════════════════════════════════════════════════════
-# ConstruManage — Docker Compose
+# ConstruManage - Docker Compose
 # Orquestra: PostgreSQL + Django Backend + React Frontend (Nginx)
-# ═══════════════════════════════════════════════════════════════
 
 services:
-  # ─── PostgreSQL Database ───
+  # PostgreSQL Database
   db:
     image: postgres:16-alpine
     container_name: construmanage-db
@@ -21,7 +19,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # ─── Django REST Framework Backend ───
+  # Django REST Framework Backend
   backend:
     build:
       context: ./backend
@@ -38,7 +36,7 @@ services:
     volumes:
       - static_files:/app/staticfiles
 
-  # ─── React Frontend (Nginx) ───
+  # React Frontend (Nginx)
   frontend:
     build:
       context: ./frontend

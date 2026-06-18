@@ -18,12 +18,14 @@ done
 echo "[OK] PostgreSQL disponivel!"
 
 # Run migrations
+echo "[*] A validar configuracao Django..."
+python manage.py check
+
 echo "[*] A aplicar migracoes..."
-python manage.py makemigrations --noinput
 python manage.py migrate --noinput
 
 echo "[*] A sincronizar utilizadores demo..."
-python manage.py seed_data --users-only
+python manage.py sync_demo_users
 
 # Seed data (only if DB is empty)
 echo "[*] A verificar dados de demonstracao..."
@@ -39,7 +41,7 @@ if Obra.objects.count() == 0:
     call_command('seed_data')
 else:
     print('[OK] Dados ja existem, seed ignorado.')
-"
+" || echo "[!] Seed demo falhou, mas o backend vai iniciar."
 
 echo "[OK] Backend pronto! A iniciar servidor..."
 exec "$@"

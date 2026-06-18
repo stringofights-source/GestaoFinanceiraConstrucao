@@ -1,7 +1,5 @@
-# ──────────────────────────────────────────────
-# ConstruManage Backend — Dockerfile
+# ConstruManage Backend - Dockerfile
 # Multi-stage: Python 3.12 slim + Gunicorn
-# ──────────────────────────────────────────────
 FROM python:3.12-slim AS base
 
 # Prevent Python from writing .pyc and enable unbuffered output

@@ -1,194 +1,167 @@
-# 📖 ConstruManage — Documentação Técnica
+# ConstruManage - Documentacao Tecnica
 
-## 1. Visão Geral da Arquitetura
+## 1. Arquitetura
 
-A aplicação segue uma arquitetura **cliente-servidor desacoplada**, orquestrada por **Docker Compose**:
+A aplicacao usa uma arquitetura cliente-servidor:
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                   Docker Compose Network                       │
-│                                                                │
-│  ┌───────────────┐    ┌──────────────────┐    ┌─────────────┐ │
-│  │   Frontend    │    │   Backend        │    │  PostgreSQL  │ │
-│  │   React+Nginx │───►│   Django+Gunicorn│───►│  16-alpine   │ │
-│  │   :80         │API │   :8000          │SQL │  :5432       │ │
-│  └───────────────┘    └──────────────────┘    └─────────────┘ │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-```
+- Frontend: React + Vite, servido em Docker por Nginx.
+- Backend: Django + Django REST Framework + Simple JWT.
+- Base de dados: PostgreSQL.
+- Orquestracao: Docker Compose.
 
-### Serviços Docker
+O frontend consome a API em `/api/` e o Nginx encaminha esses pedidos para o backend.
 
-| Serviço | Imagem Base | Função | Porta |
-|---------|-------------|--------|-------|
-| `db` | `postgres:16-alpine` | Base de dados PostgreSQL | 5432 |
-| `backend` | `python:3.12-slim` + Gunicorn | API REST + Admin | 8000 |
-| `frontend` | `node:20-alpine` → `nginx:alpine` | SPA React + Reverse Proxy | 80 |
+## 2. Configuracao por Ambiente
 
----
+As variaveis sensiveis da API ficam no backend:
 
-## 2. Configuração por Variáveis de Ambiente
+- `backend/.env`: desenvolvimento local.
+- `backend/.env.docker`: Docker Compose.
+- `backend/.env.example`: template sem credenciais reais.
 
-Todas as configurações sensíveis são externalizadas via `.env`:
+O frontend nao tem ficheiros `.env` nesta versao.
 
-```
-.env.example → copiar para .env → preenchido pelo developer
-                                       ↓
-docker-compose.yml (env_file: .env) → injecta nos containers
-                                       ↓
-Django settings.py (os.environ.get) → lê em runtime
-```
+Variaveis principais:
 
-**Ficheiro `.env`** nunca é incluído no Git (`.gitignore`). O `.env.example` serve como template.
+- `DJANGO_SECRET_KEY`
+- `DJANGO_DEBUG`
+- `DJANGO_ALLOWED_HOSTS`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_HOST`
+- `POSTGRES_PORT`
+- `SEED_ADMIN_USERNAME`
+- `SEED_ADMIN_PASSWORD`
+- `SEED_USER_USERNAME`
+- `SEED_USER_PASSWORD`
+- `JWT_ACCESS_TOKEN_LIFETIME_HOURS`
+- `JWT_REFRESH_TOKEN_LIFETIME_DAYS`
+- `CORS_ALLOWED_ORIGINS`
 
----
+`settings.py` nao tem `SECRET_KEY` nem password PostgreSQL hardcoded; esses valores sao obrigatorios por variavel de ambiente.
 
 ## 3. Modelo de Dados
 
-### Diagrama ER
+Modelos principais:
 
-```
-┌────────────────┐     1   N    ┌────────────────────┐
-│     Obra       │◄────────────►│     Transacao      │
-│                │              │                    │
-│ - nome         │              │ - descricao        │
-│ - orcamento    │     1   N    │ - tipo (E/S)       │
-│ - custo_atual  │◄────────────►│ - valor            │
-│ - progresso    │              │ - categoria        │
-│ - status       │              │ - data             │
-│ - data_inicio  │              └────────────────────┘
-│ - data_fim     │
-│                │     1   N    ┌────────────────────┐
-│                │◄────────────►│    Fornecedor      │
-└────────────────┘              │                    │
-                                │ - nome             │
-                                │ - servico          │
-┌────────────────────┐          │ - prazo_pagamento  │
-│ PrevisaoFinanceira │          │ - valor            │
-│                    │          │ - status_pagamento │
-│ - mes              │          └────────────────────┘
-│ - recebimentos     │
-│ - pagamentos       │
-└────────────────────┘
-```
+- `Obra`: dados de obra, orcamento aprovado, custo atual, progresso e estado.
+- `Transacao`: entradas e saidas financeiras, categoria, data e obra opcional.
+- `Fornecedor`: pagamentos a fornecedores/subcontratados, prazo, valor e estado.
+- `PrevisaoFinanceira`: previsoes mensais de recebimentos e pagamentos.
+- `Notificacao`: alertas persistentes gerados a partir de fornecedores e obras.
 
----
+Relacoes:
 
-## 4. Autenticação JWT
+- `Obra` 1:N `Transacao`
+- `Obra` 1:N `Fornecedor`
+- `Notificacao` referencia a origem por `origem_tipo` e `origem_id`.
 
-### Fluxo
+## 4. Autenticacao
 
-```
-1. POST /api/auth/login/ {username, password}
-   → Retorna {access, refresh}
+Autenticacao JWT via Simple JWT:
 
-2. Requests autenticadas:
-   Header: Authorization: Bearer <access_token>
+- `POST /api/auth/login/`
+- `POST /api/auth/refresh/`
+- `POST /api/auth/register/`
 
-3. Refresh automático (Axios interceptor):
-   POST /api/auth/refresh/ {refresh}
-   → Novo {access, refresh}
+O frontend guarda `access_token` e `refresh_token` em `localStorage` e renova automaticamente o access token quando recebe `401`.
 
-4. Expiração total → redirect para /login
-```
+## 5. API
 
-| Parâmetro | Default | Env Var |
-|-----------|---------|---------|
-| Access Token | 1 hora | `JWT_ACCESS_TOKEN_LIFETIME_HOURS` |
-| Refresh Token | 7 dias | `JWT_REFRESH_TOKEN_LIFETIME_DAYS` |
-| Rotate Refresh | Sim | — |
+Base URL local:
 
----
+- Direto: `http://localhost:8000/api/`
+- Via Nginx: `http://localhost/api/`
 
-## 5. API REST — Referência
+Endpoints autenticados:
 
-### Autenticação (públicos)
+| Recurso | Lista/Criacao | Detalhe |
+|---------|---------------|---------|
+| Obras | `GET/POST /api/obras/` | `GET/PUT/PATCH/DELETE /api/obras/{id}/` |
+| Transacoes | `GET/POST /api/transacoes/` | `GET/PUT/PATCH/DELETE /api/transacoes/{id}/` |
+| Fornecedores | `GET/POST /api/fornecedores/` | `GET/PUT/PATCH/DELETE /api/fornecedores/{id}/` |
+| Previsoes | `GET/POST /api/previsoes/` | `GET/PUT/PATCH/DELETE /api/previsoes/{id}/` |
+| Notificacoes | `GET /api/notificacoes/` | `GET/PATCH/DELETE /api/notificacoes/{id}/` |
 
-| Endpoint | Body | Response |
-|----------|------|----------|
-| `POST /api/auth/login/` | `{username, password}` | `{access, refresh}` |
-| `POST /api/auth/refresh/` | `{refresh}` | `{access, refresh}` |
-| `POST /api/auth/register/` | `{username, email, password, first_name, last_name}` | `{message, user}` |
+Endpoints especificos:
 
-### Dashboard
+- `GET /api/dashboard/`
+- `POST /api/notificacoes/{id}/marcar_lida/`
+- `POST /api/notificacoes/marcar_todas_lidas/`
 
-`GET /api/dashboard/` → `{receitas_mes, despesas_mes, saldo_atual, meses_data[], custos_categoria[], pagamentos_vencidos}`
+## 6. Frontend
 
-### CRUD (autenticados)
+Rotas:
 
-| Recurso | List/Create | Detail |
-|---------|-------------|--------|
-| Obras | `GET/POST /api/obras/` | `GET/PUT/DELETE /api/obras/{id}/` |
-| Transações | `GET/POST /api/transacoes/` | `GET/PUT/DELETE /api/transacoes/{id}/` |
-| Fornecedores | `GET/POST /api/fornecedores/` | `GET/PUT/DELETE /api/fornecedores/{id}/` |
-| Previsões | `GET/POST /api/previsoes/` | `GET/PUT/DELETE /api/previsoes/{id}/` |
+- `/`: `Dashboard.jsx`
+- `/obras`: `Obras.jsx`
+- `/fluxo-caixa`: `FluxoCaixa.jsx`
+- `/fornecedores`: `Fornecedores.jsx`
+- `/previsoes`: `Previsoes.jsx`
+- `/login`: `Login.jsx`
+- `/register`: `Register.jsx`
 
----
+Componentes partilhados:
 
-## 6. Frontend — Componentes
+- `Sidebar.jsx`: navegacao principal e fecho automatico em mobile/tablet.
+- `TopHeader.jsx`: utilizador, logout, notificacoes reais e botao mobile da sidebar.
+- `PageFilters.jsx`: filtro de texto por pagina.
 
-```
-App.jsx
-├── /login → Login.jsx (JWT login form)
-├── /register → Register.jsx (user registration)
-└── /* (ProtectedRoute) → AppLayout
-    ├── Sidebar.jsx (NavLink navigation)
-    ├── TopHeader.jsx (search + user + logout)
-    └── Routes:
-        ├── / → Dashboard.jsx (BarChart + PieChart)
-        ├── /orcamentos → Orcamentos.jsx (table + progress bars)
-        ├── /fluxo-caixa → FluxoCaixa.jsx (form + table)
-        ├── /fornecedores → Fornecedores.jsx (alerts + liquidate)
-        └── /previsoes → Previsoes.jsx (AreaChart + risk analysis)
-```
+Nao existe filtro global na navbar. Cada pagina com tabela gere o seu proprio filtro local:
 
----
+- Obras: nome e descricao.
+- Transacoes: descricao, categoria, tipo e obra.
+- Fornecedores: nome, servico e obra, com segmentos para todos, vencidos, pendentes/agendados e pagos.
 
-## 7. Docker — Detalhes
+## 7. Notificacoes
 
-### Backend Dockerfile
-- **Base:** `python:3.12-slim`
-- Instala `gcc` + `libpq-dev` para psycopg2
-- Copia código + instala requirements
-- `collectstatic` para ficheiros estáticos do Django Admin
-- Entrypoint: `entrypoint.sh` → aguarda PostgreSQL → migrations → seed → Gunicorn
+As notificacoes sao documentadas em detalhe em `docs/feature_notificacoes.md`.
 
-### Frontend Dockerfile (Multi-stage)
-- **Stage 1 (build):** `node:20-alpine` → `npm install` + `npm run build`
-- **Stage 2 (serve):** `nginx:alpine` → copia `dist/` + `nginx.conf`
-- Nginx atua como reverse proxy: `/api/` → `backend:8000`, `/*` → SPA
+Resumo das regras:
 
-### Docker Compose
-- **3 serviços:** `db`, `backend`, `frontend`
-- PostgreSQL com `healthcheck` (o backend só inicia após DB estar saudável)
-- Volumes nomeados: `postgres_data` (persistência DB), `static_files`
+- Pagamentos de fornecedores vencidos.
+- Pagamentos de fornecedores pendentes nos proximos 7 dias.
+- Obras com custo atual acima do orcamento aprovado.
 
----
+As notificacoes sao persistidas, podem ser marcadas como lidas e mantem historico.
 
-## 8. Como Estender
+## 8. Seed
 
-### Adicionar novo modelo
-1. Definir em `backend/api/models.py`
-2. Criar serializer em `serializers.py`
-3. Criar ViewSet em `views.py`
-4. Registar no router em `urls.py`
-5. Registar em `admin.py`
-6. `docker compose exec backend python manage.py makemigrations && docker compose exec backend python manage.py migrate`
+`python manage.py seed_data` cria dados de demonstracao.
 
-### Adicionar nova página
-1. Criar `frontend/src/pages/NovaPagina.jsx`
-2. Rota em `App.jsx`
-3. Link em `Sidebar.jsx`
-4. Funções API em `api/api.js`
-5. `docker compose up --build frontend`
+Credenciais demo configuradas nos ficheiros locais:
 
----
+- Admin: `admin` / `admin123`
+- Utilizador: `davide` / `davide1234`
 
-## 9. Deploy em Produção
+O comando tambem aceita `--users-only`, usado no arranque Docker para sincronizar as passwords dos utilizadores demo sem limpar dados de negocio.
 
-- Alterar `DJANGO_DEBUG=False` no `.env`
-- Gerar `DJANGO_SECRET_KEY` segura
-- Configurar `DJANGO_ALLOWED_HOSTS` com o domínio real
-- Configurar HTTPS (cerbot + nginx ou cloud load balancer)
-- Usar passwords fortes para PostgreSQL
-- Restringir `CORS_ALLOWED_ORIGINS` ao domínio do frontend
+## 9. Docker
+
+`docker-compose.yml` usa `backend/.env.docker`.
+
+Servicos:
+
+- `db`: PostgreSQL.
+- `backend`: Django API.
+- `frontend`: React build servido por Nginx.
+
+O entrypoint do backend:
+
+1. Aguarda PostgreSQL.
+2. Aplica migrations.
+3. Sincroniza utilizadores demo.
+4. Carrega seed completo se a base estiver vazia.
+5. Inicia Gunicorn.
+
+## 10. Producao
+
+Antes de producao:
+
+- Definir `DJANGO_DEBUG=False`.
+- Gerar `DJANGO_SECRET_KEY` forte.
+- Configurar `DJANGO_ALLOWED_HOSTS`.
+- Usar password PostgreSQL forte.
+- Restringir `CORS_ALLOWED_ORIGINS`.
+- Configurar HTTPS.

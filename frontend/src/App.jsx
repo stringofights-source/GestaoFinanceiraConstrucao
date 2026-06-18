@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import TopHeader from './components/TopHeader'
@@ -17,11 +17,13 @@ function ProtectedRoute({ children }) {
 }
 
 function AppLayout({ onLogout }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   return (
     <div className="app-container">
-      <Sidebar />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} onLogout={onLogout} />
       <main className="main-content">
-        <TopHeader onLogout={onLogout} />
+        <TopHeader onToggleSidebar={() => setSidebarOpen((open) => !open)} />
         <div className="content-wrapper">
           <Routes>
             <Route path="/" element={<Dashboard />} />
@@ -42,6 +44,7 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    localStorage.removeItem('username')
     navigate('/login')
   }
 

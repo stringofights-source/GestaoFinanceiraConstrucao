@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Obra, Transacao, Fornecedor, PrevisaoFinanceira
+from .models import Obra, Transacao, Fornecedor, PrevisaoFinanceira, Notificacao
 
 
 @admin.register(Obra)
@@ -23,3 +23,9 @@ class FornecedorAdmin(admin.ModelAdmin):
 @admin.register(PrevisaoFinanceira)
 class PrevisaoAdmin(admin.ModelAdmin):
     list_display = ['mes', 'recebimentos_previstos', 'pagamentos_previstos']
+
+
+@admin.register(Notificacao)
+class NotificacaoAdmin(admin.ModelAdmin):
+    list_display = ['titulo', 'tipo', 'origem_tipo', 'origem_id', 'lida', 'criado_em']
+    list_filter = ['tipo', 'lida']

@@ -117,3 +117,31 @@ class PrevisaoFinanceira(models.Model):
 
     def __str__(self):
         return f'Previsão {self.mes}'
+
+
+class Notificacao(models.Model):
+    """Persistent operational notification generated from finance data."""
+
+    TIPO_CHOICES = [
+        ('pagamento_vencido', 'Pagamento vencido'),
+        ('pagamento_pendente', 'Pagamento pendente'),
+        ('desvio_orcamento', 'Desvio de orcamento'),
+    ]
+
+    tipo = models.CharField(max_length=40, choices=TIPO_CHOICES)
+    titulo = models.CharField(max_length=160)
+    mensagem = models.TextField()
+    origem_tipo = models.CharField(max_length=40)
+    origem_id = models.PositiveIntegerField()
+    lida = models.BooleanField(default=False)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+    lida_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['lida', '-criado_em']
+        unique_together = (('tipo', 'origem_tipo', 'origem_id'),)
+        verbose_name_plural = 'Notificacoes'
+
+    def __str__(self):
+        return self.titulo

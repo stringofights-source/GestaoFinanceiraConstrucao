@@ -9,18 +9,20 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSubmit = async (event) => {
+    event.preventDefault()
     setError('')
     setLoading(true)
+
     try {
-      const res = await login(username, password)
-      localStorage.setItem('access_token', res.data.access)
-      localStorage.setItem('refresh_token', res.data.refresh)
-      localStorage.setItem('username', username)
+      const cleanUsername = username.trim()
+      const response = await login(cleanUsername, password)
+      localStorage.setItem('access_token', response.data.access)
+      localStorage.setItem('refresh_token', response.data.refresh)
+      localStorage.setItem('username', cleanUsername)
       navigate('/')
-    } catch (err) {
-      setError('Credenciais inválidas. Verifique o utilizador e a palavra-passe.')
+    } catch {
+      setError('Credenciais invalidas. Verifique o utilizador e a palavra-passe.')
     } finally {
       setLoading(false)
     }
@@ -30,18 +32,19 @@ export default function Login() {
     <div className="login-page">
       <div className="login-brand">
         <h1><i className="fas fa-hard-hat"></i> ConstruManage</h1>
-        <p>Plataforma de Gestão Financeira Integrada para Empresas de Construção Civil</p>
+        <p>Plataforma de Gestao Financeira Integrada para Empresas de Construcao Civil</p>
         <ul className="features-list">
-          <li><i className="fas fa-check-circle"></i> Controle orçamental em tempo real</li>
+          <li><i className="fas fa-check-circle"></i> Controle orcamental em tempo real</li>
           <li><i className="fas fa-check-circle"></i> Fluxo de caixa automatizado</li>
-          <li><i className="fas fa-check-circle"></i> Gestão de fornecedores e pagamentos</li>
-          <li><i className="fas fa-check-circle"></i> Relatórios financeiros detalhados</li>
-          <li><i className="fas fa-check-circle"></i> Previsões e decisão estratégica</li>
+          <li><i className="fas fa-check-circle"></i> Gestao de fornecedores e pagamentos</li>
+          <li><i className="fas fa-check-circle"></i> Relatorios financeiros detalhados</li>
+          <li><i className="fas fa-check-circle"></i> Previsoes e decisao estrategica</li>
         </ul>
       </div>
+
       <div className="login-form-container">
         <h2>Bem-vindo de volta</h2>
-        <p className="subtitle">Inicie sessão na sua conta ConstruManage</p>
+        <p className="subtitle">Inicie sessao na sua conta ConstruManage</p>
 
         {error && (
           <div className="login-error">
@@ -56,25 +59,34 @@ export default function Login() {
               type="text"
               placeholder="O seu nome de utilizador"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(event) => setUsername(event.target.value)}
+              autoComplete="username"
               required
             />
           </div>
+
           <div className="form-group">
             <label>Palavra-passe</label>
             <input
               type="password"
               placeholder="A sua palavra-passe"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
               required
             />
           </div>
+
           <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? <><i className="fas fa-spinner fa-spin"></i> A entrar...</> : <><i className="fas fa-sign-in-alt"></i> Entrar</>}
+            {loading ? (
+              <><i className="fas fa-spinner fa-spin"></i> A entrar...</>
+            ) : (
+              <><i className="fas fa-sign-in-alt"></i> Entrar</>
+            )}
           </button>
+
           <div className="form-footer">
-            Não tem conta? <Link to="/register">Criar conta</Link>
+            Nao tem conta? <Link to="/register">Criar conta</Link>
           </div>
         </form>
       </div>
