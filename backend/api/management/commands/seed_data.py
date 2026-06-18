@@ -13,6 +13,43 @@ from decimal import Decimal
 class Command(BaseCommand):
     help = 'Popula a base de dados com dados de demonstração realistas.'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--users-only',
+            action='store_true',
+            help='Cria ou atualiza apenas os utilizadores demo configurados por env.',
+        )
+
+    def sync_user(self, username, email, password, first_name='', last_name='', is_superuser=False):
+        if not password:
+            role = 'superuser demo' if is_superuser else 'user demo'
+            env_name = 'SEED_ADMIN_PASSWORD' if is_superuser else 'SEED_USER_PASSWORD'
+            self.stdout.write(self.style.WARNING(f'[!] {env_name} nao definido; {role} nao foi criado/atualizado.'))
+            return
+
+        user = User.objects.filter(username=username).first()
+        if user is None:
+            if is_superuser:
+                User.objects.create_superuser(username, email, password)
+                self.stdout.write(self.style.SUCCESS(f'[+] Superuser "{username}" criado.'))
+            else:
+                User.objects.create_user(
+                    username, email, password,
+                    first_name=first_name, last_name=last_name
+                )
+                self.stdout.write(self.style.SUCCESS(f'[+] User "{username}" criado.'))
+            return
+
+        user.email = email
+        user.first_name = first_name
+        user.last_name = last_name
+        if is_superuser:
+            user.is_staff = True
+            user.is_superuser = True
+        user.set_password(password)
+        user.save()
+        self.stdout.write(self.style.SUCCESS(f'[+] User "{username}" atualizado.'))
+
     def create_seed_users(self):
         admin_username = os.environ.get('SEED_ADMIN_USERNAME', 'admin')
         admin_email = os.environ.get('SEED_ADMIN_EMAIL', 'admin@construmanage.pt')
@@ -24,22 +61,14 @@ class Command(BaseCommand):
         demo_first_name = os.environ.get('SEED_USER_FIRST_NAME', 'Davide')
         demo_last_name = os.environ.get('SEED_USER_LAST_NAME', 'Moreno')
 
-        if admin_password and not User.objects.filter(username=admin_username).exists():
-            User.objects.create_superuser(admin_username, admin_email, admin_password)
-            self.stdout.write(self.style.SUCCESS(f'[+] Superuser "{admin_username}" criado.'))
-        elif not admin_password:
-            self.stdout.write(self.style.WARNING('[!] SEED_ADMIN_PASSWORD nao definido; superuser demo nao foi criado.'))
-
-        if demo_password and not User.objects.filter(username=demo_username).exists():
-            User.objects.create_user(
-                demo_username, demo_email, demo_password,
-                first_name=demo_first_name, last_name=demo_last_name
-            )
-            self.stdout.write(self.style.SUCCESS(f'[+] User "{demo_username}" criado.'))
-        elif not demo_password:
-            self.stdout.write(self.style.WARNING('[!] SEED_USER_PASSWORD nao definido; user demo nao foi criado.'))
+        self.sync_user(admin_username, admin_email, admin_password, is_superuser=True)
+        self.sync_user(demo_username, demo_email, demo_password, demo_first_name, demo_last_name)
 
     def handle(self, *args, **options):
+        if options['users_only']:
+            self.create_seed_users()
+            return
+
         self.stdout.write('[*] A limpar dados antigos...')
         Transacao.objects.all().delete()
         Fornecedor.objects.all().delete()

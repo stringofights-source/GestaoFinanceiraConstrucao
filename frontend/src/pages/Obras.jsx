@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { getObras, createObra, updateObra, deleteObra } from '../api/api'
+import PageFilters from '../components/PageFilters'
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v)
@@ -343,20 +344,12 @@ export default function Obras() {
           </div>
         </div>
       </div>
-
-      {/* ── Search ── */}
-      <div style={{ marginBottom: 20 }}>
-        <div className="search-bar" style={{ width: '340px' }}>
-          <i className="fas fa-magnifying-glass"></i>
-          <input
-            type="text"
-            placeholder="Pesquisar obra…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            id="obras-search"
-          />
-        </div>
-      </div>
+      <PageFilters
+        inputId="obras-search"
+        search={search}
+        onSearchChange={setSearch}
+        placeholder="Pesquisar obra..."
+      />
 
       {/* ── Table ── */}
       <div className="card full-width">

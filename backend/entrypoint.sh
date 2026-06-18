@@ -22,6 +22,9 @@ echo "[*] A aplicar migracoes..."
 python manage.py makemigrations --noinput
 python manage.py migrate --noinput
 
+echo "[*] A sincronizar utilizadores demo..."
+python manage.py seed_data --users-only
+
 # Seed data (only if DB is empty)
 echo "[*] A verificar dados de demonstracao..."
 python -c "

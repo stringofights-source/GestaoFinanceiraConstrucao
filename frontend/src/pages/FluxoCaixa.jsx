@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react'
 import { getTransacoes, createTransacao } from '../api/api'
+import PageFilters from '../components/PageFilters'
 
 const formatCurrency = (v) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v)
+
+const categoriaLabels = {
+  clientes: 'Clientes', materiais: 'Materiais', mao_de_obra: 'Mão de Obra',
+  subcontratados: 'Subcontratados', equipamentos: 'Equipamentos',
+  licencas: 'Licenças', outros: 'Outros'
+}
 
 export default function FluxoCaixa() {
   const [transacoes, setTransacoes] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const [form, setForm] = useState({ descricao: '', tipo: 'entrada', valor: '', categoria: 'outros' })
 
   const fetchData = () => {
@@ -36,6 +44,15 @@ export default function FluxoCaixa() {
   }
 
   if (loading) return <div className="spinner-container"><div className="spinner"></div></div>
+
+  const q = search.toLowerCase()
+  const filtered = transacoes.filter(t =>
+    !q ||
+    t.descricao.toLowerCase().includes(q) ||
+    (categoriaLabels[t.categoria] || t.categoria).toLowerCase().includes(q) ||
+    (t.tipo === 'entrada' ? 'entrada' : 'saída').includes(q) ||
+    (t.obra_nome || '').toLowerCase().includes(q)
+  )
 
   return (
     <section className="fade-in">
@@ -84,27 +101,33 @@ export default function FluxoCaixa() {
           </div>
         </form>
       </div>
+      <PageFilters
+        inputId="transacoes-search"
+        search={search}
+        onSearchChange={setSearch}
+        placeholder="Pesquisar transacao..."
+      />
 
       <div className="card full-width">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Categoria</th>
-              <th>Obra</th>
-              <th>Tipo</th>
-              <th>Valor</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transacoes.map(t => {
-              const categoriaLabels = {
-                clientes: 'Clientes', materiais: 'Materiais', mao_de_obra: 'Mão de Obra',
-                subcontratados: 'Subcontratados', equipamentos: 'Equipamentos',
-                licencas: 'Licenças', outros: 'Outros'
-              }
-              return (
+        {filtered.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            <i className="fas fa-receipt" style={{ fontSize: '2rem', marginBottom: '12px', display: 'block', opacity: 0.3 }}></i>
+            {search ? 'Nenhuma transação encontrada para a pesquisa.' : 'Ainda não existem transações registadas.'}
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Obra</th>
+                <th>Tipo</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(t => (
                 <tr key={t.id}>
                   <td>{new Date(t.data).toLocaleDateString('pt-PT')}</td>
                   <td>{t.descricao}</td>
@@ -119,10 +142,10 @@ export default function FluxoCaixa() {
                     {t.tipo === 'entrada' ? '+' : '-'} {formatCurrency(t.valor)}
                   </td>
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </section>
   )

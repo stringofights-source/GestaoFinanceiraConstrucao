@@ -139,7 +139,7 @@ body {
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 0 32px;
   flex-shrink: 0;
 }
@@ -171,6 +171,25 @@ body {
   font-size: 0.9rem;
   font-family: inherit;
   color: var(--text-main);
+}
+
+.page-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.page-filter-search {
+  width: min(380px, 100%);
+}
+
+.page-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .user-profile {

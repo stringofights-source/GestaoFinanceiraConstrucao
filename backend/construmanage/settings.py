@@ -21,7 +21,7 @@ def load_env_file(path):
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
-load_env_file(BASE_DIR / '.env')
+load_env_file(BASE_DIR / '.env.docker')
 
 
 def required_env(name):

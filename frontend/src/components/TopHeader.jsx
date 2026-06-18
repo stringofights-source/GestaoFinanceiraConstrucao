@@ -5,10 +5,6 @@ export default function TopHeader({ onLogout }) {
 
   return (
     <header className="top-header">
-      <div className="search-bar">
-        <i className="fas fa-search"></i>
-        <input type="text" placeholder="Pesquisar obras, faturas, fornecedores..." />
-      </div>
       <div className="user-profile">
         <div className="notification">
           <i className="fas fa-bell"></i>
