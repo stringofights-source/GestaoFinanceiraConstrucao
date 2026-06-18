@@ -1,86 +1,73 @@
-import axios from 'axios';
+import axios from 'axios'
+import { tokenStorage } from '../auth/tokenStorage'
 
-const API_BASE = '/api';
+const API_BASE = '/api'
 
 const api = axios.create({
   baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
-});
+})
 
-// Attach JWT token to every request.
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
+  const token = tokenStorage.getAccessToken()
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`
   }
-  return config;
-});
+  return config
+})
 
-// Refresh token on 401.
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refreshToken = localStorage.getItem('refresh_token');
+      originalRequest._retry = true
+      const refreshToken = tokenStorage.getRefreshToken()
       if (refreshToken) {
         try {
-          const res = await axios.post(`${API_BASE}/auth/refresh/`, {
-            refresh: refreshToken,
-          });
-          localStorage.setItem('access_token', res.data.access);
-          if (res.data.refresh) {
-            localStorage.setItem('refresh_token', res.data.refresh);
-          }
-          originalRequest.headers.Authorization = `Bearer ${res.data.access}`;
-          return api(originalRequest);
+          const response = await axios.post(`${API_BASE}/auth/refresh/`, { refresh: refreshToken })
+          tokenStorage.updateAccessToken(response.data.access, response.data.refresh)
+          originalRequest.headers.Authorization = `Bearer ${response.data.access}`
+          return api(originalRequest)
         } catch {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          window.location.href = '/login';
+          tokenStorage.clear()
+          window.location.href = '/login'
         }
       } else {
-        window.location.href = '/login';
+        tokenStorage.clear()
+        window.location.href = '/login'
       }
     }
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
-);
+)
 
-// Auth
-export const login = (username, password) =>
-  api.post('/auth/login/', { username, password });
+const withParams = (params = {}) => ({ params })
 
-export const register = (data) => api.post('/auth/register/', data);
+export const login = (username, password) => api.post('/auth/login/', { username, password })
+export const register = (data) => api.post('/auth/register/', data)
+export const getDashboard = () => api.get('/dashboard/')
 
-// Dashboard
-export const getDashboard = () => api.get('/dashboard/');
+export const getObras = (params) => api.get('/obras/', withParams(params))
+export const createObra = (data) => api.post('/obras/', data)
+export const updateObra = (id, data) => api.put(`/obras/${id}/`, data)
+export const deleteObra = (id) => api.delete(`/obras/${id}/`)
 
-// Obras
-export const getObras = () => api.get('/obras/');
-export const createObra = (data) => api.post('/obras/', data);
-export const updateObra = (id, data) => api.put(`/obras/${id}/`, data);
-export const deleteObra = (id) => api.delete(`/obras/${id}/`);
+export const getTransacoes = (params) => api.get('/transacoes/', withParams(params))
+export const createTransacao = (data) => api.post('/transacoes/', data)
+export const updateTransacao = (id, data) => api.put(`/transacoes/${id}/`, data)
+export const deleteTransacao = (id) => api.delete(`/transacoes/${id}/`)
 
-// Transacoes
-export const getTransacoes = () => api.get('/transacoes/');
-export const createTransacao = (data) => api.post('/transacoes/', data);
-export const updateTransacao = (id, data) => api.put(`/transacoes/${id}/`, data);
-export const deleteTransacao = (id) => api.delete(`/transacoes/${id}/`);
+export const getFornecedores = (params) => api.get('/fornecedores/', withParams(params))
+export const createFornecedor = (data) => api.post('/fornecedores/', data)
+export const updateFornecedor = (id, data) => api.put(`/fornecedores/${id}/`, data)
+export const deleteFornecedor = (id) => api.delete(`/fornecedores/${id}/`)
 
-// Fornecedores
-export const getFornecedores = () => api.get('/fornecedores/');
-export const createFornecedor = (data) => api.post('/fornecedores/', data);
-export const updateFornecedor = (id, data) => api.put(`/fornecedores/${id}/`, data);
-export const deleteFornecedor = (id) => api.delete(`/fornecedores/${id}/`);
+export const getPrevisoes = (params) => api.get('/previsoes/', withParams(params))
 
-// Previsoes
-export const getPrevisoes = () => api.get('/previsoes/');
+export const getNotificacoes = (params) => api.get('/notificacoes/', withParams(params))
+export const sincronizarNotificacoes = () => api.post('/notificacoes/sincronizar/')
+export const marcarNotificacaoLida = (id) => api.post(`/notificacoes/${id}/marcar_lida/`)
+export const marcarTodasNotificacoesLidas = () => api.post('/notificacoes/marcar_todas_lidas/')
 
-// Notificacoes
-export const getNotificacoes = () => api.get('/notificacoes/');
-export const marcarNotificacaoLida = (id) => api.post(`/notificacoes/${id}/marcar_lida/`);
-export const marcarTodasNotificacoesLidas = () => api.post('/notificacoes/marcar_todas_lidas/');
-
-export default api;
+export default api

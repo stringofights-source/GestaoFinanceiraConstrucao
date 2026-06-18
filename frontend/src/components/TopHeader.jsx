@@ -3,9 +3,9 @@ import {
   getNotificacoes,
   marcarNotificacaoLida,
   marcarTodasNotificacoesLidas,
+  sincronizarNotificacoes,
 } from '../api/api'
-
-const normalizeList = (data) => data.results || data
+import { normalizeListResponse } from '../utils/apiData'
 
 export default function TopHeader({ onToggleSidebar }) {
   const [notificacoes, setNotificacoes] = useState([])
@@ -14,15 +14,22 @@ export default function TopHeader({ onToggleSidebar }) {
   const fetchNotificacoes = async () => {
     try {
       const response = await getNotificacoes()
-      setNotificacoes(normalizeList(response.data))
+      setNotificacoes(normalizeListResponse(response.data).items)
     } catch (error) {
       console.error(error)
     }
   }
 
   useEffect(() => {
-    fetchNotificacoes()
-    const timer = window.setInterval(fetchNotificacoes, 60000)
+    const refresh = async () => {
+      try {
+        await sincronizarNotificacoes()
+      } finally {
+        fetchNotificacoes()
+      }
+    }
+    refresh()
+    const timer = window.setInterval(refresh, 300000)
     return () => window.clearInterval(timer)
   }, [])
 

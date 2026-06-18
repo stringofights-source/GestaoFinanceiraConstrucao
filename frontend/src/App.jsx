@@ -9,9 +9,10 @@ import FluxoCaixa from './pages/FluxoCaixa'
 import Fornecedores from './pages/Fornecedores'
 import Previsoes from './pages/Previsoes'
 import Obras from './pages/Obras'
+import { tokenStorage } from './auth/tokenStorage'
 
 function ProtectedRoute({ children }) {
-  const token = localStorage.getItem('access_token')
+  const token = tokenStorage.getAccessToken()
   if (!token) return <Navigate to="/login" replace />
   return children
 }
@@ -42,9 +43,7 @@ export default function App() {
   const navigate = useNavigate()
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('username')
+    tokenStorage.clear()
     navigate('/login')
   }
 

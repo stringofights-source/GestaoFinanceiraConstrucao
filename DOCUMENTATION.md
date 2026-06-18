@@ -165,3 +165,10 @@ Antes de producao:
 - Usar password PostgreSQL forte.
 - Restringir `CORS_ALLOWED_ORIGINS`.
 - Configurar HTTPS.
+
+Notas adicionais:
+
+- A base de dados ativa e PostgreSQL, configurada em `backend/config/settings/base.py`.
+- `backend/db.sqlite3` pode existir como artefacto local, mas nao e usado pelos settings atuais.
+- Dados e utilizadores demo so devem ser ativados com `RUN_DEMO_SEED=true` em ambientes de demonstracao.
+- Ver tambem `docs/production_readiness.md`.

@@ -24,17 +24,17 @@ python manage.py check
 echo "[*] A aplicar migracoes..."
 python manage.py migrate --noinput
 
-echo "[*] A sincronizar utilizadores demo..."
-python manage.py sync_demo_users
+if [ "${RUN_DEMO_SEED:-false}" = "true" ]; then
+    echo "[*] RUN_DEMO_SEED=true; a sincronizar utilizadores demo..."
+    python manage.py sync_demo_users
 
-# Seed data (only if DB is empty)
-echo "[*] A verificar dados de demonstracao..."
-python -c "
+    echo "[*] A verificar dados de demonstracao..."
+    python -c "
 import django
 import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'construmanage.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
 django.setup()
-from api.models import Obra
+from api.obras.models import Obra
 if Obra.objects.count() == 0:
     print('[*] Base de dados vazia, a carregar seed data...')
     from django.core.management import call_command
@@ -42,6 +42,9 @@ if Obra.objects.count() == 0:
 else:
     print('[OK] Dados ja existem, seed ignorado.')
 " || echo "[!] Seed demo falhou, mas o backend vai iniciar."
+else
+    echo "[OK] Seed demo desativado. Defina RUN_DEMO_SEED=true apenas em ambientes de demonstracao."
+fi
 
 echo "[OK] Backend pronto! A iniciar servidor..."
 exec "$@"

@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { getDashboard } from '../api/api'
+import { formatCurrency } from '../utils/formatters'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer
 } from 'recharts'
 
 const COLORS = ['#0f172a', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899']
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value)
-}
 
 export default function Dashboard() {
   const [data, setData] = useState(null)

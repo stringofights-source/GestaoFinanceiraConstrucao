@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { getObras, createObra, updateObra, deleteObra } from '../api/api'
 import PageFilters from '../components/PageFilters'
-
-const formatCurrency = (v) =>
-  new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v)
+import PaginationControls from '../components/PaginationControls'
+import FormError from '../components/FormError'
+import usePaginatedResource from '../hooks/usePaginatedResource'
+import { errorToMessage } from '../utils/apiData'
+import { formatCurrency, formatDate } from '../utils/formatters'
 
 const EMPTY_FORM = {
   nome: '',
@@ -64,15 +66,7 @@ function ObraModal({ obra, onClose, onSaved }) {
       }
       onSaved()
     } catch (err) {
-      const data = err.response?.data
-      if (data) {
-        const msgs = Object.entries(data)
-          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
-          .join(' | ')
-        setError(msgs)
-      } else {
-        setError('Ocorreu um erro. Tente novamente.')
-      }
+      setError(errorToMessage(err))
     } finally {
       setSaving(false)
     }
@@ -98,11 +92,7 @@ function ObraModal({ obra, onClose, onSaved }) {
 
         <form onSubmit={handleSubmit} id="obra-form">
           <div className="modal-body">
-            {error && (
-              <div className="login-error" style={{ marginBottom: 16 }}>
-                <i className="fas fa-circle-exclamation"></i> {error}
-              </div>
-            )}
+            <FormError message={error} />
 
             <div className="form-grid-2">
               {/* Nome */}
@@ -228,26 +218,30 @@ function ObraModal({ obra, onClose, onSaved }) {
 
 /* ─── Main Page ──────────────────────────────────────── */
 export default function Obras() {
-  const [obras, setObras] = useState([])
-  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState(null) // null | 'create' | obra object
   const [confirmDelete, setConfirmDelete] = useState(null) // obra id
   const [deleting, setDeleting] = useState(false)
 
-  const fetchData = useCallback(() => {
-    setLoading(true)
-    getObras()
-      .then((res) => setObras(res.data.results || res.data))
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [])
+  const fetchObras = useCallback((params) => getObras({
+    ...params,
+    search: search || undefined,
+  }), [search])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  const {
+    items: obras,
+    page,
+    count,
+    next,
+    previous,
+    loading,
+    reload,
+    goToPage,
+  } = usePaginatedResource(fetchObras, [search])
 
   const handleSaved = () => {
     setModal(null)
-    fetchData()
+    reload()
   }
 
   const handleDelete = async (id) => {
@@ -255,7 +249,7 @@ export default function Obras() {
     try {
       await deleteObra(id)
       setConfirmDelete(null)
-      fetchData()
+      reload()
     } catch (err) {
       console.error(err)
     } finally {
@@ -264,17 +258,13 @@ export default function Obras() {
   }
 
   // ── Stats ──
-  const totalObras = obras.length
+  const totalObras = count || obras.length
   const emCurso = obras.filter((o) => o.status === 'em_curso').length
   const totalOrcamento = obras.reduce((s, o) => s + parseFloat(o.orcamento_aprovado || 0), 0)
   const totalCusto = obras.reduce((s, o) => s + parseFloat(o.custo_atual || 0), 0)
 
   // ── Filtered ──
-  const filtered = obras.filter(
-    (o) =>
-      o.nome.toLowerCase().includes(search.toLowerCase()) ||
-      (o.descricao || '').toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = obras
 
   if (loading)
     return (
@@ -398,8 +388,8 @@ export default function Obras() {
                     <td>
                       <span className={`badge ${st.cls}`}>{st.label}</span>
                     </td>
-                    <td>{obra.data_inicio ? new Date(obra.data_inicio).toLocaleDateString('pt-PT') : '—'}</td>
-                    <td>{obra.data_fim_prevista ? new Date(obra.data_fim_prevista).toLocaleDateString('pt-PT') : '—'}</td>
+                    <td>{formatDate(obra.data_inicio)}</td>
+                    <td>{formatDate(obra.data_fim_prevista)}</td>
                     <td>{formatCurrency(obra.orcamento_aprovado)}</td>
                     <td>{formatCurrency(obra.custo_atual)}</td>
                     <td className={isOver ? 'negative' : 'positive'}>
@@ -469,6 +459,14 @@ export default function Obras() {
       </div>
 
       {/* ── Modal ── */}
+      <PaginationControls
+        page={page}
+        count={count}
+        next={next}
+        previous={previous}
+        onPageChange={goToPage}
+      />
+
       {modal && (
         <ObraModal
           obra={modal === 'create' ? null : modal}

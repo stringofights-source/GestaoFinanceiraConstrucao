@@ -1,8 +1,9 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { tokenStorage } from '../auth/tokenStorage'
 
 export default function Sidebar({ isOpen = false, onClose, onLogout }) {
-  const username = localStorage.getItem('username') || 'Utilizador'
+  const username = tokenStorage.getUsername()
 
   const links = [
     { to: '/', icon: 'fas fa-chart-line', label: 'Relatorios em Tempo Real' },

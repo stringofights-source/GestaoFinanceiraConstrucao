@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { getPrevisoes } from '../api/api'
+import { formatCurrency } from '../utils/formatters'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
-
-const formatCurrency = (v) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v)
 
 export default function Previsoes() {
   const [previsoes, setPrevisoes] = useState([])

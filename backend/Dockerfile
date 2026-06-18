@@ -20,8 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project code
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput 2>/dev/null || true
+# Collect static files; fail the image build if static collection is broken.
+RUN DJANGO_SECRET_KEY=build-time-secret POSTGRES_PASSWORD=build-time-password python manage.py collectstatic --noinput
 
 # Entrypoint script handles migrations + seed
 COPY entrypoint.sh /entrypoint.sh
@@ -30,4 +30,4 @@ RUN chmod +x /entrypoint.sh
 EXPOSE 8000
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["gunicorn", "construmanage.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

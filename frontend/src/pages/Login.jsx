@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { login } from '../api/api'
+import { tokenStorage } from '../auth/tokenStorage'
 
 export default function Login() {
   const [username, setUsername] = useState('')
@@ -17,9 +18,11 @@ export default function Login() {
     try {
       const cleanUsername = username.trim()
       const response = await login(cleanUsername, password)
-      localStorage.setItem('access_token', response.data.access)
-      localStorage.setItem('refresh_token', response.data.refresh)
-      localStorage.setItem('username', cleanUsername)
+      tokenStorage.setSession({
+        access: response.data.access,
+        refresh: response.data.refresh,
+        username: cleanUsername,
+      })
       navigate('/')
     } catch {
       setError('Credenciais invalidas. Verifique o utilizador e a palavra-passe.')

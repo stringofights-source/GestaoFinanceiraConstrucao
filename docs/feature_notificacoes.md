@@ -22,7 +22,7 @@ A combinacao `tipo`, `origem_tipo` e `origem_id` e unica para evitar duplicados 
 
 ## Regras de Geracao
 
-A sincronizacao corre quando a API de notificacoes e consultada.
+A sincronizacao corre por acao explicita em `POST /api/notificacoes/sincronizar/`.
 
 Regras atuais:
 
@@ -47,10 +47,11 @@ As notificacoes antigas nao sao apagadas automaticamente quando a situacao muda.
 
 Base: `/api/notificacoes/`
 
-- `GET /api/notificacoes/`: lista notificacoes e sincroniza novas ocorrencias antes de responder.
+- `GET /api/notificacoes/`: lista notificacoes persistidas.
 - `GET /api/notificacoes/{id}/`: detalhe de uma notificacao.
 - `PATCH /api/notificacoes/{id}/`: atualizacao parcial, incluindo `lida`.
 - `DELETE /api/notificacoes/{id}/`: remove uma notificacao do historico.
+- `POST /api/notificacoes/sincronizar/`: sincroniza novas ocorrencias a partir de fornecedores e obras.
 - `POST /api/notificacoes/{id}/marcar_lida/`: marca uma notificacao como lida.
 - `POST /api/notificacoes/marcar_todas_lidas/`: marca todas as notificacoes como lidas.
 
@@ -58,7 +59,7 @@ Todos os endpoints exigem autenticacao JWT, seguindo a configuracao global do Dj
 
 ## Interface
 
-O `TopHeader` consulta `/api/notificacoes/`, mostra a contagem de notificacoes nao lidas no sino e apresenta um dropdown com o historico recente. Ao clicar numa notificacao, ela e marcada como lida. O menu tambem permite marcar todas como lidas.
+O `TopHeader` sincroniza notificacoes por POST, consulta `/api/notificacoes/`, mostra a contagem de notificacoes nao lidas no sino e apresenta um dropdown com o historico recente. Ao clicar numa notificacao, ela e marcada como lida. O menu tambem permite marcar todas como lidas.
 
 ## Gestao e Historico
 
@@ -68,4 +69,4 @@ O historico vive na tabela `api_notificacao`. Uma notificacao pode ser:
 - Lida: permanece visivel no historico, sem contar no badge.
 - Removida: sai do historico via `DELETE`.
 
-As notificacoes geradas automaticamente sao idempotentes: consultar a API varias vezes nao cria duplicados para a mesma origem e tipo.
+As notificacoes geradas automaticamente sao idempotentes: sincronizar varias vezes nao cria duplicados para a mesma origem e tipo.

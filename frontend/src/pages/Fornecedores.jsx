@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   createFornecedor,
   deleteFornecedor,
@@ -7,9 +7,11 @@ import {
   updateFornecedor,
 } from '../api/api'
 import PageFilters from '../components/PageFilters'
-
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value)
+import PaginationControls from '../components/PaginationControls'
+import FormError from '../components/FormError'
+import usePaginatedResource from '../hooks/usePaginatedResource'
+import { errorToMessage, fetchAllPages } from '../utils/apiData'
+import { formatCurrency, formatDate } from '../utils/formatters'
 
 const statusMap = {
   pendente: { label: 'Pendente', cls: 'badge-warning' },
@@ -85,16 +87,7 @@ function FornecedorModal({ fornecedor, obras, onClose, onSaved }) {
       }
       onSaved()
     } catch (err) {
-      const data = err.response?.data
-      if (data) {
-        setError(
-          Object.entries(data)
-            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-            .join(' | ')
-        )
-      } else {
-        setError('Nao foi possivel guardar o fornecedor.')
-      }
+      setError(errorToMessage(err, 'Nao foi possivel guardar o fornecedor.'))
     } finally {
       setSaving(false)
     }
@@ -115,11 +108,7 @@ function FornecedorModal({ fornecedor, obras, onClose, onSaved }) {
 
         <form id="fornecedor-form" onSubmit={handleSubmit}>
           <div className="modal-body">
-            {error && (
-              <div className="login-error" style={{ marginBottom: 16 }}>
-                <i className="fas fa-circle-exclamation"></i> {error}
-              </div>
-            )}
+            <FormError message={error} />
 
             <div className="form-grid-2">
               <div className="form-group span-2">
@@ -182,39 +171,53 @@ function FornecedorModal({ fornecedor, obras, onClose, onSaved }) {
 }
 
 export default function Fornecedores() {
-  const [fornecedores, setFornecedores] = useState([])
   const [obras, setObras] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [obrasLoading, setObrasLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('todos')
   const [modal, setModal] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
-  const fetchData = async () => {
-    setLoading(true)
+  const fetchFornecedores = useCallback((params) => getFornecedores({
+    ...params,
+    search: search || undefined,
+    status: statusFilter !== 'todos' ? statusFilter : undefined,
+  }), [search, statusFilter])
+
+  const {
+    items: fornecedores,
+    page,
+    count,
+    next,
+    previous,
+    loading,
+    reload,
+    goToPage,
+  } = usePaginatedResource(fetchFornecedores, [search, statusFilter])
+
+  const fetchObras = async () => {
+    setObrasLoading(true)
     try {
-      const [fornecedoresRes, obrasRes] = await Promise.all([getFornecedores(), getObras()])
-      setFornecedores(fornecedoresRes.data.results || fornecedoresRes.data)
-      setObras(obrasRes.data.results || obrasRes.data)
+      setObras(await fetchAllPages(getObras))
     } catch (error) {
       console.error(error)
     } finally {
-      setLoading(false)
+      setObrasLoading(false)
     }
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => { fetchObras() }, [])
 
   const handleSaved = () => {
     setModal(null)
-    fetchData()
+    reload()
   }
 
   const marcarPago = async (fornecedor) => {
     try {
       await updateFornecedor(fornecedor.id, { ...fornecedor, status_pagamento: 'pago' })
-      fetchData()
+      reload()
     } catch (error) {
       console.error(error)
     }
@@ -225,7 +228,7 @@ export default function Fornecedores() {
     try {
       await deleteFornecedor(id)
       setConfirmDelete(null)
-      fetchData()
+      reload()
     } catch (error) {
       console.error(error)
     } finally {
@@ -233,29 +236,14 @@ export default function Fornecedores() {
     }
   }
 
-  if (loading) return <div className="spinner-container"><div className="spinner"></div></div>
+  if (loading || obrasLoading) return <div className="spinner-container"><div className="spinner"></div></div>
 
   const vencidos = fornecedores.filter(isFornecedorVencido)
   const pendentes = fornecedores.filter(isFornecedorPendente)
   const totalVencido = vencidos.reduce((sum, fornecedor) => sum + parseFloat(fornecedor.valor), 0)
   const totalPendente = pendentes.reduce((sum, fornecedor) => sum + parseFloat(fornecedor.valor), 0)
 
-  const query = search.toLowerCase()
-  const filtered = fornecedores.filter((fornecedor) => {
-    const matchesText =
-      !query ||
-      fornecedor.nome.toLowerCase().includes(query) ||
-      (fornecedor.servico || '').toLowerCase().includes(query) ||
-      (fornecedor.obra_nome || '').toLowerCase().includes(query)
-
-    const matchesStatus =
-      statusFilter === 'todos' ||
-      (statusFilter === 'atrasado' && isFornecedorVencido(fornecedor)) ||
-      (statusFilter === 'pendente' && isFornecedorPendente(fornecedor)) ||
-      (statusFilter === 'pago' && fornecedor.status_pagamento === 'pago')
-
-    return matchesText && matchesStatus
-  })
+  const filtered = fornecedores
 
   const filterButtons = [
     { key: 'todos', label: 'Todos', icon: 'fa-list' },
@@ -342,7 +330,7 @@ export default function Fornecedores() {
                     <td>{fornecedor.servico}</td>
                     <td>{fornecedor.obra_nome || '-'}</td>
                     <td className={isAtrasado ? 'negative' : ''}>
-                      {new Date(fornecedor.prazo_pagamento).toLocaleDateString('pt-PT')}
+                      {formatDate(fornecedor.prazo_pagamento)}
                       {isAtrasado && ' (Atrasado)'}
                     </td>
                     <td>{formatCurrency(fornecedor.valor)}</td>
@@ -381,6 +369,14 @@ export default function Fornecedores() {
           </table>
         )}
       </div>
+
+      <PaginationControls
+        page={page}
+        count={count}
+        next={next}
+        previous={previous}
+        onPageChange={goToPage}
+      />
 
       {modal && (
         <FornecedorModal

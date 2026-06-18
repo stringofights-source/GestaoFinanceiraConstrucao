@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   createTransacao,
   deleteTransacao,
@@ -7,9 +7,11 @@ import {
   updateTransacao,
 } from '../api/api'
 import PageFilters from '../components/PageFilters'
-
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value)
+import PaginationControls from '../components/PaginationControls'
+import FormError from '../components/FormError'
+import usePaginatedResource from '../hooks/usePaginatedResource'
+import { errorToMessage, fetchAllPages } from '../utils/apiData'
+import { formatCurrency, formatDate } from '../utils/formatters'
 
 const categoriaLabels = {
   clientes: 'Clientes',
@@ -71,16 +73,7 @@ function TransacaoModal({ transacao, obras, onClose, onSaved }) {
       }
       onSaved()
     } catch (err) {
-      const data = err.response?.data
-      if (data) {
-        setError(
-          Object.entries(data)
-            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-            .join(' | ')
-        )
-      } else {
-        setError('Nao foi possivel guardar a transacao.')
-      }
+      setError(errorToMessage(err, 'Nao foi possivel guardar a transacao.'))
     } finally {
       setSaving(false)
     }
@@ -101,11 +94,7 @@ function TransacaoModal({ transacao, obras, onClose, onSaved }) {
 
         <form id="transacao-form" onSubmit={handleSubmit}>
           <div className="modal-body">
-            {error && (
-              <div className="login-error" style={{ marginBottom: 16 }}>
-                <i className="fas fa-circle-exclamation"></i> {error}
-              </div>
-            )}
+            <FormError message={error} />
 
             <div className="form-grid-2">
               <div className="form-group span-2">
@@ -185,32 +174,45 @@ function TransacaoModal({ transacao, obras, onClose, onSaved }) {
 }
 
 export default function FluxoCaixa() {
-  const [transacoes, setTransacoes] = useState([])
   const [obras, setObras] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [obrasLoading, setObrasLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
-  const fetchData = async () => {
-    setLoading(true)
+  const fetchTransacoes = useCallback((params) => getTransacoes({
+    ...params,
+    search: search || undefined,
+  }), [search])
+
+  const {
+    items: transacoes,
+    page,
+    count,
+    next,
+    previous,
+    loading,
+    reload,
+    goToPage,
+  } = usePaginatedResource(fetchTransacoes, [search])
+
+  const fetchObras = async () => {
+    setObrasLoading(true)
     try {
-      const [transacoesRes, obrasRes] = await Promise.all([getTransacoes(), getObras()])
-      setTransacoes(transacoesRes.data.results || transacoesRes.data)
-      setObras(obrasRes.data.results || obrasRes.data)
+      setObras(await fetchAllPages(getObras))
     } catch (error) {
       console.error(error)
     } finally {
-      setLoading(false)
+      setObrasLoading(false)
     }
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => { fetchObras() }, [])
 
   const handleSaved = () => {
     setModal(null)
-    fetchData()
+    reload()
   }
 
   const handleDelete = async (id) => {
@@ -218,7 +220,7 @@ export default function FluxoCaixa() {
     try {
       await deleteTransacao(id)
       setConfirmDelete(null)
-      fetchData()
+      reload()
     } catch (error) {
       console.error(error)
     } finally {
@@ -226,16 +228,9 @@ export default function FluxoCaixa() {
     }
   }
 
-  if (loading) return <div className="spinner-container"><div className="spinner"></div></div>
+  if (loading || obrasLoading) return <div className="spinner-container"><div className="spinner"></div></div>
 
-  const query = search.toLowerCase()
-  const filtered = transacoes.filter((transacao) =>
-    !query ||
-    transacao.descricao.toLowerCase().includes(query) ||
-    (categoriaLabels[transacao.categoria] || transacao.categoria).toLowerCase().includes(query) ||
-    (transacao.tipo === 'entrada' ? 'entrada' : 'saida').includes(query) ||
-    (transacao.obra_nome || '').toLowerCase().includes(query)
-  )
+  const filtered = transacoes
 
   return (
     <section className="fade-in">
@@ -280,7 +275,7 @@ export default function FluxoCaixa() {
                 const isConfirming = confirmDelete === transacao.id
                 return (
                   <tr key={transacao.id}>
-                    <td>{new Date(transacao.data).toLocaleDateString('pt-PT')}</td>
+                    <td>{formatDate(transacao.data)}</td>
                     <td>{transacao.descricao}</td>
                     <td>{categoriaLabels[transacao.categoria] || transacao.categoria}</td>
                     <td>{transacao.obra_nome || '-'}</td>
@@ -321,6 +316,14 @@ export default function FluxoCaixa() {
           </table>
         )}
       </div>
+
+      <PaginationControls
+        page={page}
+        count={count}
+        next={next}
+        previous={previous}
+        onPageChange={goToPage}
+      />
 
       {modal && (
         <TransacaoModal
