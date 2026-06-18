@@ -65,7 +65,7 @@ Autenticacao JWT via Simple JWT:
 - `POST /api/auth/refresh/`
 - `POST /api/auth/register/`
 
-O frontend guarda `access_token` e `refresh_token` em `localStorage` e renova automaticamente o access token quando recebe `401`.
+O frontend guarda `access_token` e `refresh_token` em `sessionStorage`, limpa tokens antigos de `localStorage` e renova automaticamente o access token quando recebe `401`.
 
 ## 5. API
 
@@ -135,7 +135,7 @@ Credenciais demo configuradas nos ficheiros locais:
 - Admin: `admin` / `admin123`
 - Utilizador: `davide` / `davide1234`
 
-O comando tambem aceita `--users-only`, usado no arranque Docker para sincronizar as passwords dos utilizadores demo sem limpar dados de negocio.
+O comando tambem aceita `--users-only`, que pode ser usado para sincronizar utilizadores demo sem limpar dados de negocio.
 
 ## 9. Docker
 
@@ -151,9 +151,8 @@ O entrypoint do backend:
 
 1. Aguarda PostgreSQL.
 2. Aplica migrations.
-3. Sincroniza utilizadores demo.
-4. Carrega seed completo se a base estiver vazia.
-5. Inicia Gunicorn.
+3. Se `RUN_DEMO_SEED=true`, sincroniza utilizadores demo e carrega seed completo quando a base estiver vazia.
+4. Inicia Gunicorn.
 
 ## 10. Producao
 

@@ -5,6 +5,7 @@ from django.test import TestCase
 
 from api.fornecedores.models import Fornecedor
 from api.notificacoes.models import Notificacao
+from api.notificacoes.serializers import NotificacaoSerializer
 from api.notificacoes.services import NotificationService
 from api.obras.models import Obra
 
@@ -33,3 +34,19 @@ class NotificationServiceTests(TestCase):
 
         self.assertTrue(Notificacao.objects.filter(tipo='pagamento_vencido').exists())
         self.assertTrue(Notificacao.objects.filter(tipo='desvio_orcamento').exists())
+
+    def test_serializer_sets_read_timestamp_when_patched(self):
+        notification = Notificacao.objects.create(
+            tipo='pagamento_pendente',
+            titulo='Pagamento pendente',
+            mensagem='Pagamento pendente.',
+            origem_tipo='fornecedor',
+            origem_id=1,
+        )
+
+        serializer = NotificacaoSerializer(notification, data={'lida': True}, partial=True)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        updated = serializer.save()
+
+        self.assertTrue(updated.lida)
+        self.assertIsNotNone(updated.lida_em)

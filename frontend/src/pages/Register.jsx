@@ -81,7 +81,7 @@ export default function Register() {
 
           <div className="form-group">
             <label>Palavra-passe</label>
-            <input type="password" name="password" placeholder="Minimo 6 caracteres" value={form.password} onChange={handleChange} autoComplete="new-password" required />
+            <input type="password" name="password" placeholder="Minimo 8 caracteres" value={form.password} onChange={handleChange} autoComplete="new-password" required />
           </div>
 
           <button className="btn btn-primary" type="submit" disabled={loading}>

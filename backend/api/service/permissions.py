@@ -1,7 +1,7 @@
 from rest_framework import permissions
 
 
-class IsAuthenticatedForWriteOrReadOnly(permissions.IsAuthenticated):
-    """Shared permission hook for future tenant and object-level rules."""
+class IsAuthenticatedForDataAccess(permissions.IsAuthenticated):
+    """Shared permission hook for authenticated financial data access."""
 
     pass

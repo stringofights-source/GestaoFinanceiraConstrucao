@@ -5,13 +5,13 @@ from rest_framework.response import Response
 from api.notificacoes.models import Notificacao
 from api.notificacoes.serializers import NotificacaoSerializer
 from api.notificacoes.services import NotificationService
-from api.service.permissions import IsAuthenticatedForWriteOrReadOnly
+from api.service.permissions import IsAuthenticatedForDataAccess
 
 
 class NotificacaoViewSet(viewsets.ModelViewSet):
     queryset = Notificacao.objects.all()
     serializer_class = NotificacaoSerializer
-    permission_classes = [IsAuthenticatedForWriteOrReadOnly]
+    permission_classes = [IsAuthenticatedForDataAccess]
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def create(self, request, *args, **kwargs):

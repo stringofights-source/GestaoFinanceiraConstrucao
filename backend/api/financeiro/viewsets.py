@@ -3,12 +3,12 @@ from rest_framework import viewsets
 
 from api.financeiro.models import PrevisaoFinanceira, Transacao
 from api.financeiro.serializers import PrevisaoFinanceiraSerializer, TransacaoSerializer
-from api.service.permissions import IsAuthenticatedForWriteOrReadOnly
+from api.service.permissions import IsAuthenticatedForDataAccess
 
 
 class TransacaoViewSet(viewsets.ModelViewSet):
     serializer_class = TransacaoSerializer
-    permission_classes = [IsAuthenticatedForWriteOrReadOnly]
+    permission_classes = [IsAuthenticatedForDataAccess]
 
     def get_queryset(self):
         queryset = Transacao.objects.with_obra()
@@ -26,4 +26,4 @@ class TransacaoViewSet(viewsets.ModelViewSet):
 class PrevisaoFinanceiraViewSet(viewsets.ModelViewSet):
     queryset = PrevisaoFinanceira.objects.all()
     serializer_class = PrevisaoFinanceiraSerializer
-    permission_classes = [IsAuthenticatedForWriteOrReadOnly]
+    permission_classes = [IsAuthenticatedForDataAccess]

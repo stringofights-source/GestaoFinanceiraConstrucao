@@ -24,7 +24,7 @@ class DashboardService:
             'saldo_atual': float(total_income - total_expenses),
             'meses_data': DashboardService._last_six_months(today),
             'custos_categoria': list(Transacao.objects.costs_by_category()),
-            'pagamentos_vencidos': float(Fornecedor.objects.overdue_total()),
+            'pagamentos_vencidos': float(Fornecedor.objects.overdue_total(today)),
         }
 
     @staticmethod

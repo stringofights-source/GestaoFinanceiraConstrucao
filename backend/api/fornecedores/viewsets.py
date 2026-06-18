@@ -3,12 +3,12 @@ from rest_framework import viewsets
 
 from api.fornecedores.models import Fornecedor
 from api.fornecedores.serializers import FornecedorSerializer
-from api.service.permissions import IsAuthenticatedForWriteOrReadOnly
+from api.service.permissions import IsAuthenticatedForDataAccess
 
 
 class FornecedorViewSet(viewsets.ModelViewSet):
     serializer_class = FornecedorSerializer
-    permission_classes = [IsAuthenticatedForWriteOrReadOnly]
+    permission_classes = [IsAuthenticatedForDataAccess]
 
     def get_queryset(self):
         queryset = Fornecedor.objects.with_obra()

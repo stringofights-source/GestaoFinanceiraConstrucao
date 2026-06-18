@@ -1,5 +1,6 @@
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Q, Sum
+from django.utils import timezone
 
 
 class FornecedorQuerySet(models.QuerySet):
@@ -32,10 +33,12 @@ class FornecedorManager(models.Manager.from_queryset(FornecedorQuerySet)):
     def pending_until(self, today, limit):
         return self.with_obra().pending_until(today, limit)
 
-    def overdue_total(self):
+    def overdue_total(self, today=None):
+        today = today or timezone.now().date()
         return (
             self.get_queryset()
-            .filter(status_pagamento='atrasado')
+            .filter(Q(status_pagamento='atrasado') | Q(prazo_pagamento__lt=today))
+            .exclude(status_pagamento='pago')
             .aggregate(total=Sum('valor'))['total']
             or 0
         )

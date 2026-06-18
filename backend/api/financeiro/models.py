@@ -25,7 +25,7 @@ class Transacao(models.Model):
     valor = models.DecimalField(max_digits=14, decimal_places=2)
     categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES, default='outros')
     data = models.DateField()
-    obra = models.ForeignKey(Obra, on_delete=models.CASCADE, related_name='transacoes', null=True, blank=True)
+    obra = models.ForeignKey(Obra, on_delete=models.PROTECT, related_name='transacoes', null=True, blank=True)
     criado_em = models.DateTimeField(auto_now_add=True)
 
     objects = TransacaoManager()
@@ -37,6 +37,7 @@ class Transacao(models.Model):
             models.Index(fields=['tipo', 'data'], name='trans_tipo_data_idx'),
             models.Index(fields=['categoria', 'data'], name='trans_cat_data_idx'),
             models.Index(fields=['obra', 'data'], name='trans_obra_data_idx'),
+            models.Index(fields=['data'], name='trans_data_idx'),
         ]
         constraints = [
             models.CheckConstraint(check=models.Q(valor__gte=0), name='transacao_valor_non_negative'),

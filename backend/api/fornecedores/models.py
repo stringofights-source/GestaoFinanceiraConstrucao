@@ -14,7 +14,7 @@ class Fornecedor(models.Model):
 
     nome = models.CharField(max_length=255)
     servico = models.CharField(max_length=255)
-    obra = models.ForeignKey(Obra, on_delete=models.CASCADE, related_name='fornecedores', null=True, blank=True)
+    obra = models.ForeignKey(Obra, on_delete=models.PROTECT, related_name='fornecedores', null=True, blank=True)
     prazo_pagamento = models.DateField()
     valor = models.DecimalField(max_digits=14, decimal_places=2)
     status_pagamento = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente')

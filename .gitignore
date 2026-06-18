@@ -11,3 +11,7 @@ dist/
 .codex_site/
 .DS_Store
 *.log
+
+/backend/.venv
+/frontend/node_modules
+/frontend/.npm-cache
