@@ -36,12 +36,28 @@ class NotificationServiceTests(TestCase):
         self.assertTrue(Notificacao.objects.filter(tipo='desvio_orcamento').exists())
 
     def test_serializer_sets_read_timestamp_when_patched(self):
+        today = date(2026, 6, 18)
+        obra = Obra.objects.create(
+            nome='Obra associada',
+            orcamento_aprovado=Decimal('100.00'),
+            custo_atual=Decimal('50.00'),
+            progresso=50,
+            status='em_curso',
+            data_inicio=today,
+        )
+        fornecedor = Fornecedor.objects.create(
+            nome='Fornecedor pendente',
+            servico='Materiais',
+            obra=obra,
+            prazo_pagamento=today,
+            valor=Decimal('10.00'),
+            status_pagamento='pendente',
+        )
         notification = Notificacao.objects.create(
             tipo='pagamento_pendente',
             titulo='Pagamento pendente',
             mensagem='Pagamento pendente.',
-            origem_tipo='fornecedor',
-            origem_id=1,
+            fornecedor=fornecedor,
         )
 
         serializer = NotificacaoSerializer(notification, data={'lida': True}, partial=True)

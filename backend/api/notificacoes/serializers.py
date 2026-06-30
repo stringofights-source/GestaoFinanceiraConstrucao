@@ -5,6 +5,9 @@ from api.notificacoes.models import Notificacao
 
 
 class NotificacaoSerializer(serializers.ModelSerializer):
+    origem_tipo = serializers.CharField(read_only=True)
+    origem_id = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Notificacao
         fields = [
@@ -12,6 +15,8 @@ class NotificacaoSerializer(serializers.ModelSerializer):
             'tipo',
             'titulo',
             'mensagem',
+            'obra',
+            'fornecedor',
             'origem_tipo',
             'origem_id',
             'lida',
@@ -24,6 +29,8 @@ class NotificacaoSerializer(serializers.ModelSerializer):
             'tipo',
             'titulo',
             'mensagem',
+            'obra',
+            'fornecedor',
             'origem_tipo',
             'origem_id',
             'criado_em',

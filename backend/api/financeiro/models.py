@@ -31,6 +31,7 @@ class Transacao(models.Model):
     objects = TransacaoManager()
 
     class Meta:
+        db_table = 'transacoes'
         ordering = ['-data', '-criado_em']
         verbose_name_plural = 'Transacoes'
         indexes = [
@@ -55,6 +56,7 @@ class PrevisaoFinanceira(models.Model):
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'previsoes_financeiras'
         ordering = ['pk']
         verbose_name_plural = 'Previsoes Financeiras'
         constraints = [

@@ -25,6 +25,7 @@ class Obra(models.Model):
     objects = ObraManager()
 
     class Meta:
+        db_table = 'obras'
         ordering = ['-criado_em']
         verbose_name_plural = 'Obras'
         indexes = [

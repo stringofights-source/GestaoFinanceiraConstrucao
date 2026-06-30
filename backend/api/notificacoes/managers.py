@@ -2,14 +2,25 @@ from django.db import models
 
 
 class NotificacaoManager(models.Manager):
-    def upsert(self, tipo, origem_tipo, origem_id, titulo, mensagem):
+    def upsert_fornecedor(self, tipo, fornecedor, titulo, mensagem):
         return self.update_or_create(
             tipo=tipo,
-            origem_tipo=origem_tipo,
-            origem_id=origem_id,
+            fornecedor=fornecedor,
             defaults={
                 'titulo': titulo,
                 'mensagem': mensagem,
+                'obra': None,
+            },
+        )
+
+    def upsert_obra(self, tipo, obra, titulo, mensagem):
+        return self.update_or_create(
+            tipo=tipo,
+            obra=obra,
+            defaults={
+                'titulo': titulo,
+                'mensagem': mensagem,
+                'fornecedor': None,
             },
         )
 

@@ -23,6 +23,7 @@ class Fornecedor(models.Model):
     objects = FornecedorManager()
 
     class Meta:
+        db_table = 'fornecedores'
         ordering = ['prazo_pagamento']
         verbose_name_plural = 'Fornecedores'
         indexes = [

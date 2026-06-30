@@ -14,10 +14,9 @@ class NotificationService:
         pending_limit = today + timedelta(days=7)
 
         for supplier in Fornecedor.objects.overdue(today):
-            Notificacao.objects.upsert(
+            Notificacao.objects.upsert_fornecedor(
                 tipo='pagamento_vencido',
-                origem_tipo='fornecedor',
-                origem_id=supplier.id,
+                fornecedor=supplier,
                 titulo=f'Pagamento vencido: {supplier.nome}',
                 mensagem=(
                     f'O pagamento de {supplier.valor} EUR a {supplier.nome} '
@@ -26,10 +25,9 @@ class NotificationService:
             )
 
         for supplier in Fornecedor.objects.pending_until(today, pending_limit):
-            Notificacao.objects.upsert(
+            Notificacao.objects.upsert_fornecedor(
                 tipo='pagamento_pendente',
-                origem_tipo='fornecedor',
-                origem_id=supplier.id,
+                fornecedor=supplier,
                 titulo=f'Pagamento pendente: {supplier.nome}',
                 mensagem=(
                     f'O pagamento de {supplier.valor} EUR a {supplier.nome} '
@@ -38,10 +36,9 @@ class NotificationService:
             )
 
         for work in Obra.objects.over_budget():
-            Notificacao.objects.upsert(
+            Notificacao.objects.upsert_obra(
                 tipo='desvio_orcamento',
-                origem_tipo='obra',
-                origem_id=work.id,
+                obra=work,
                 titulo=f'Desvio de orcamento: {work.nome}',
                 mensagem=(
                     f'A obra {work.nome} tem custo atual de {work.custo_atual} EUR, '
